@@ -30,8 +30,8 @@ FR_image.pack(side="bottom", fill="both", expand=1)
 
 """ Création d'un "Label" qui contient la photo"""
 image = tk.PhotoImage(file='./Images/fleur.png')
-LB_Camera = tk.Label(FR_image, image=image)
-LB_Camera.pack()
+LB_image = tk.Label(FR_image, image=image)
+LB_image.pack()
 
 """ Créations des boutons du menu supérieur, pas encore fonctionnel, le premier servira a aller sur la page accueil
 et le deuxième à aller sur la page collection"""
