@@ -1,3 +1,2 @@
-# projet-ia
-Classification de fleur en utilisant Python et sa librairie TensorFlow
-projets-thomas192 created by GitHub Classroom
+# Projet dans un environnement graphique
+Classification de fleurs en utilisant Python et TensorFlow.

@@ -62,7 +62,7 @@ FR_camera = tk.Frame(window, relief=tk.FLAT, bd=5, background="green")
 FR_camera.pack(side="bottom", fill="both", expand=1)
 
 """ Création d'un "Label" qui contiendra ensuite le flux de la caméra de l'utilisateur, photo en placeholder"""
-image = tk.PhotoImage(file='./Images/fleur.png')
+image = tk.PhotoImage(file='images/fleur.png')
 LB_Camera = tk.Label(FR_camera, image=image)
 LB_Camera.pack()
 
