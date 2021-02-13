@@ -11,6 +11,10 @@ def ouvrir_collection():
     """Ouvre la page collection"""
     print("Ouverture de collection")
 
+def supprimer_classification():
+    """Supprime la classification"""
+    print("Suppression de la classification")
+
 
 # Création de la fenêtre principale de l'UI
 window = tk.Tk()
@@ -48,6 +52,10 @@ fr_note.pack_propagate(False)
 txt_note = tk.Text(fr_note)
 txt_note.insert(tk.INSERT, "Note : Trouvée sur la montagne au sud de Matane.")
 txt_note.pack()
+
+# Ajout du bouton pour supprimer une classification
+bt_importer_photo = tk.Button(cv_image, text="Supprimer", font=fontBouton, command=supprimer_classification, bg="#f87e28", fg="#5b5b5b")
+bt_importer_photo.place(x=int(window.winfo_screenwidth() * 0.05), y=int(window.winfo_screenheight() * 0.05))
 
 # Créations des boutons du menu supérieur, pas encore fonctionnel, le premier servira a aller sur la page accueil
 # et le deuxième à aller sur la page collection, tout deux mis dans la "Frame" fr_menu
