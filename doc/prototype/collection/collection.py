@@ -1,6 +1,7 @@
 from datetime import date
 import tkinter as tk
 import tkinter.font as font
+from tkscrolledframe import ScrolledFrame
 from PIL import Image, ImageTk
 
 # Fenêtre principale
@@ -23,8 +24,10 @@ bt_collection['font'] = font.Font(size=15)
 bt_collection.pack(side="left", fill="x", expand=1)
 
 # Page
-fr_page = tk.Frame(window, background="grey")
-fr_page.pack(side="bottom", fill="both", expand=True, padx=20, pady=10)
+sf_page = ScrolledFrame(window)
+sf_page.pack(side="bottom", fill="both", expand=True, padx=20, pady=10)
+
+fr_page = sf_page.display_widget(tk.Frame)
 
 """
 # Image
@@ -35,7 +38,7 @@ lb_image.pack()
 
 # Données simulées
 fleurs = []
-for ligne in range(41):
+for ligne in range(100):
     image_fleur = Image.open('./image/fleur.png')
     largeur_de_base = 100
     pourcent_largeur = (largeur_de_base / float(image_fleur.size[0]))
