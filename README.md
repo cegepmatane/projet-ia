@@ -1,2 +1,2 @@
 # Projet dans un environnement graphique
-Classification de fleurs en utilisant Python et TensorFlow.
+Classification de fleurs en Python avec TensorFlow.
