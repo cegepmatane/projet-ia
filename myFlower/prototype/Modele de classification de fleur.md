@@ -18,6 +18,50 @@ import matplotlib.pyplot as plt
 %matplotlib inline
 ```
 
+
+```python
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+print("Num GPUs Available: ", len(physical_devices))
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+```
+
+    Num GPUs Available:  1
+    
+
+# Data augmentation
+
+
+```python
+gen = ImageDataGenerator(rotation_range=10, width_shift_range=0.1, height_shift_range=0.1, shear_range=0.15, zoom_range=0.1, 
+    channel_shift_range=10., horizontal_flip=True)
+```
+
+
+```python
+os.chdir('/Documents/data/flower-photos/')
+
+dirs = os.listdir()
+
+for dir in dirs:
+    images = os.listdir(dir)
+    for image in images:
+        image_path = '/Documents/data/flower-photos/'+dir+'/'+image
+        # Obtain image by reading the image from disk
+        image = np.expand_dims(plt.imread(image_path),0)
+        # Generate and save batches of augmented images from the original image
+        aug_iter = gen.flow(image, save_to_dir='/Documents/data/flower-photos/'+dir, save_prefix='aug-', save_format='jpeg')
+        aug_images = [next(aug_iter)[0].astype(np.uint8) for i in range(10)]
+        
+    print(dir)
+```
+
+    daisy
+    dandelion
+    roses
+    sunflowers
+    tulips
+    
+
 # Image preparation
 
 
@@ -74,25 +118,20 @@ if os.path.isdir('train/daisy/') is False:
             os.mkdir(f'valid/{dir}')
             os.mkdir(f'test/{dir}')
               
-            valid_samples = random.sample(os.listdir(f'train/{dir}'), 150)
+            valid_samples = random.sample(os.listdir(f'train/{dir}'), 500)
             for j in valid_samples:
                 shutil.move(f'train/{dir}/{j}', f'valid/{dir}')
 
-            test_samples = random.sample(os.listdir(f'train/{dir}'), 25)
+            test_samples = random.sample(os.listdir(f'train/{dir}'), 150)
             for k in test_samples:
                 shutil.move(f'train/{dir}/{k}', f'test/{dir}')
 os.chdir('../..')
 ```
 
-    daisy
-    dandelion
-    roses
-    sunflowers
-    tulips
-    
-
 
 ```python
+os.chdir('/Documents/')
+
 train_path = 'data/flower-photos/train'
 valid_path = 'data/flower-photos/valid'
 test_path = 'data/flower-photos/test'
@@ -101,16 +140,16 @@ test_path = 'data/flower-photos/test'
 
 ```python
 train_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input).flow_from_directory(
-    directory=train_path, target_size=(224,224), batch_size=5)
+    directory=train_path, target_size=(224,224), batch_size=75)
 valid_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input).flow_from_directory(
-    directory=valid_path, target_size=(224,224), batch_size=5)
+    directory=valid_path, target_size=(224,224), batch_size=10)
 test_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input).flow_from_directory(
-    directory=test_path, target_size=(224,224), batch_size=5, shuffle=False)
+    directory=test_path, target_size=(224,224), batch_size=10, shuffle=False)
 ```
 
-    Found 2795 images belonging to 5 classes.
+    Found 26345 images belonging to 5 classes.
+    Found 2500 images belonging to 5 classes.
     Found 750 images belonging to 5 classes.
-    Found 125 images belonging to 5 classes.
     
 
 # Modify model
@@ -125,7 +164,7 @@ mobile.summary()
     _________________________________________________________________
     Layer (type)                 Output Shape              Param #   
     =================================================================
-    input_2 (InputLayer)         [(None, 224, 224, 3)]     0         
+    input_3 (InputLayer)         [(None, 224, 224, 3)]     0         
     _________________________________________________________________
     conv1 (Conv2D)               (None, 112, 112, 32)      864       
     _________________________________________________________________
@@ -297,7 +336,7 @@ mobile.summary()
     _________________________________________________________________
     conv_pw_13_relu (ReLU)       (None, 7, 7, 1024)        0         
     _________________________________________________________________
-    global_average_pooling2d_1 ( (None, 1024)              0         
+    global_average_pooling2d_2 ( (None, 1024)              0         
     _________________________________________________________________
     reshape_1 (Reshape)          (None, 1, 1, 1024)        0         
     _________________________________________________________________
@@ -328,7 +367,7 @@ model = Model(inputs=mobile.input, outputs=output)
 
 
 ```python
-for layer in model.layers[:-23]:
+for layer in model.layers[:-28]:
     layer.trainable = False
 ```
 
@@ -337,11 +376,11 @@ for layer in model.layers[:-23]:
 model.summary()
 ```
 
-    Model: "model"
+    Model: "model_2"
     _________________________________________________________________
     Layer (type)                 Output Shape              Param #   
     =================================================================
-    input_2 (InputLayer)         [(None, 224, 224, 3)]     0         
+    input_3 (InputLayer)         [(None, 224, 224, 3)]     0         
     _________________________________________________________________
     conv1 (Conv2D)               (None, 112, 112, 32)      864       
     _________________________________________________________________
@@ -513,13 +552,13 @@ model.summary()
     _________________________________________________________________
     conv_pw_13_relu (ReLU)       (None, 7, 7, 1024)        0         
     _________________________________________________________________
-    global_average_pooling2d_1 ( (None, 1024)              0         
+    global_average_pooling2d_2 ( (None, 1024)              0         
     _________________________________________________________________
-    dense (Dense)                (None, 5)                 5125      
+    dense_2 (Dense)              (None, 5)                 5125      
     =================================================================
     Total params: 3,233,989
-    Trainable params: 1,868,805
-    Non-trainable params: 1,365,184
+    Trainable params: 2,136,581
+    Non-trainable params: 1,097,408
     _________________________________________________________________
     
 
@@ -542,71 +581,71 @@ model.fit(x=train_batches,
 ```
 
     Epoch 1/30
-    559/559 - 162s - loss: 0.6221 - accuracy: 0.7893 - val_loss: 0.3068 - val_accuracy: 0.9053
+    352/352 - 289s - loss: 0.1808 - accuracy: 0.9419 - val_loss: 0.0337 - val_accuracy: 0.9940
     Epoch 2/30
-    559/559 - 143s - loss: 0.2951 - accuracy: 0.8916 - val_loss: 0.4816 - val_accuracy: 0.8440
+    352/352 - 108s - loss: 0.0170 - accuracy: 0.9986 - val_loss: 0.0230 - val_accuracy: 0.9948
     Epoch 3/30
-    559/559 - 161s - loss: 0.2403 - accuracy: 0.9199 - val_loss: 0.3577 - val_accuracy: 0.8707
+    352/352 - 104s - loss: 0.0064 - accuracy: 0.9997 - val_loss: 0.0074 - val_accuracy: 0.9992
     Epoch 4/30
-    559/559 - 148s - loss: 0.1743 - accuracy: 0.9406 - val_loss: 0.2717 - val_accuracy: 0.9120
+    352/352 - 94s - loss: 0.0038 - accuracy: 0.9998 - val_loss: 0.0038 - val_accuracy: 1.0000
     Epoch 5/30
-    559/559 - 147s - loss: 0.1360 - accuracy: 0.9599 - val_loss: 0.4000 - val_accuracy: 0.8693
+    352/352 - 94s - loss: 0.0021 - accuracy: 1.0000 - val_loss: 0.0043 - val_accuracy: 0.9988
     Epoch 6/30
-    559/559 - 139s - loss: 0.1056 - accuracy: 0.9689 - val_loss: 0.4403 - val_accuracy: 0.8667
+    352/352 - 93s - loss: 0.0020 - accuracy: 0.9997 - val_loss: 0.0025 - val_accuracy: 0.9996
     Epoch 7/30
-    559/559 - 136s - loss: 0.1169 - accuracy: 0.9639 - val_loss: 0.3125 - val_accuracy: 0.9133
+    352/352 - 114s - loss: 0.0019 - accuracy: 0.9997 - val_loss: 0.0024 - val_accuracy: 0.9996
     Epoch 8/30
-    559/559 - 137s - loss: 0.0696 - accuracy: 0.9789 - val_loss: 0.2813 - val_accuracy: 0.9093
+    352/352 - 124s - loss: 0.0016 - accuracy: 0.9997 - val_loss: 0.0022 - val_accuracy: 1.0000
     Epoch 9/30
-    559/559 - 148s - loss: 0.0878 - accuracy: 0.9767 - val_loss: 0.2536 - val_accuracy: 0.9160
+    352/352 - 115s - loss: 0.0013 - accuracy: 0.9998 - val_loss: 0.0018 - val_accuracy: 0.9992
     Epoch 10/30
-    559/559 - 143s - loss: 0.0695 - accuracy: 0.9782 - val_loss: 0.4437 - val_accuracy: 0.8800
+    352/352 - 119s - loss: 6.2591e-04 - accuracy: 0.9999 - val_loss: 6.8087e-04 - val_accuracy: 1.0000
     Epoch 11/30
-    559/559 - 143s - loss: 0.0720 - accuracy: 0.9789 - val_loss: 0.5085 - val_accuracy: 0.8573
+    352/352 - 92s - loss: 9.8930e-04 - accuracy: 0.9999 - val_loss: 0.0019 - val_accuracy: 0.9996
     Epoch 12/30
-    559/559 - 166s - loss: 0.0674 - accuracy: 0.9800 - val_loss: 0.3698 - val_accuracy: 0.8960
+    352/352 - 76s - loss: 5.2641e-04 - accuracy: 0.9999 - val_loss: 0.0021 - val_accuracy: 0.9992
     Epoch 13/30
-    559/559 - 178s - loss: 0.0686 - accuracy: 0.9778 - val_loss: 0.4720 - val_accuracy: 0.8627
+    352/352 - 71s - loss: 4.7367e-04 - accuracy: 0.9999 - val_loss: 5.2549e-04 - val_accuracy: 1.0000
     Epoch 14/30
-    559/559 - 202s - loss: 0.0414 - accuracy: 0.9871 - val_loss: 0.2904 - val_accuracy: 0.9267
+    352/352 - 72s - loss: 2.3557e-04 - accuracy: 1.0000 - val_loss: 4.5819e-04 - val_accuracy: 1.0000
     Epoch 15/30
-    559/559 - 235s - loss: 0.0446 - accuracy: 0.9868 - val_loss: 0.2531 - val_accuracy: 0.9200
+    352/352 - 72s - loss: 2.8631e-04 - accuracy: 0.9999 - val_loss: 4.3340e-04 - val_accuracy: 1.0000
     Epoch 16/30
-    559/559 - 196s - loss: 0.0493 - accuracy: 0.9835 - val_loss: 0.2262 - val_accuracy: 0.9267
+    352/352 - 72s - loss: 0.0125 - accuracy: 0.9962 - val_loss: 0.0053 - val_accuracy: 0.9984
     Epoch 17/30
-    559/559 - 170s - loss: 0.0637 - accuracy: 0.9789 - val_loss: 0.2542 - val_accuracy: 0.9240
+    352/352 - 72s - loss: 0.0012 - accuracy: 0.9999 - val_loss: 8.4341e-04 - val_accuracy: 1.0000
     Epoch 18/30
-    559/559 - 154s - loss: 0.0461 - accuracy: 0.9893 - val_loss: 0.3785 - val_accuracy: 0.8973
+    352/352 - 72s - loss: 6.3712e-04 - accuracy: 0.9999 - val_loss: 7.0686e-04 - val_accuracy: 1.0000
     Epoch 19/30
-    559/559 - 152s - loss: 0.0342 - accuracy: 0.9918 - val_loss: 0.2595 - val_accuracy: 0.9147
+    352/352 - 72s - loss: 4.9118e-04 - accuracy: 0.9999 - val_loss: 6.3708e-04 - val_accuracy: 1.0000
     Epoch 20/30
-    559/559 - 153s - loss: 0.0403 - accuracy: 0.9875 - val_loss: 0.4160 - val_accuracy: 0.8867
+    352/352 - 73s - loss: 0.0014 - accuracy: 0.9997 - val_loss: 0.0014 - val_accuracy: 0.9996
     Epoch 21/30
-    559/559 - 151s - loss: 0.0359 - accuracy: 0.9900 - val_loss: 0.3335 - val_accuracy: 0.9067
+    352/352 - 74s - loss: 0.0016 - accuracy: 0.9995 - val_loss: 0.0028 - val_accuracy: 0.9992
     Epoch 22/30
-    559/559 - 164s - loss: 0.0276 - accuracy: 0.9921 - val_loss: 0.3025 - val_accuracy: 0.9133
+    352/352 - 74s - loss: 4.1939e-04 - accuracy: 1.0000 - val_loss: 3.6503e-04 - val_accuracy: 1.0000
     Epoch 23/30
-    559/559 - 172s - loss: 0.0327 - accuracy: 0.9911 - val_loss: 0.2969 - val_accuracy: 0.9107
+    352/352 - 82s - loss: 3.1323e-04 - accuracy: 0.9999 - val_loss: 4.0575e-04 - val_accuracy: 1.0000
     Epoch 24/30
-    559/559 - 157s - loss: 0.0249 - accuracy: 0.9932 - val_loss: 0.4013 - val_accuracy: 0.9160
+    352/352 - 78s - loss: 2.0269e-04 - accuracy: 1.0000 - val_loss: 3.5161e-04 - val_accuracy: 1.0000
     Epoch 25/30
-    559/559 - 153s - loss: 0.0441 - accuracy: 0.9889 - val_loss: 0.3204 - val_accuracy: 0.9160
+    352/352 - 78s - loss: 0.0019 - accuracy: 0.9995 - val_loss: 0.0350 - val_accuracy: 0.9900
     Epoch 26/30
-    559/559 - 155s - loss: 0.0288 - accuracy: 0.9911 - val_loss: 0.3413 - val_accuracy: 0.9080
+    352/352 - 113s - loss: 0.0059 - accuracy: 0.9979 - val_loss: 0.0038 - val_accuracy: 0.9992
     Epoch 27/30
-    559/559 - 156s - loss: 0.0193 - accuracy: 0.9950 - val_loss: 0.2357 - val_accuracy: 0.9387
+    352/352 - 91s - loss: 0.0013 - accuracy: 0.9997 - val_loss: 0.0031 - val_accuracy: 0.9988
     Epoch 28/30
-    559/559 - 194s - loss: 0.0200 - accuracy: 0.9943 - val_loss: 0.2936 - val_accuracy: 0.9160
+    352/352 - 86s - loss: 5.8039e-04 - accuracy: 0.9998 - val_loss: 0.0036 - val_accuracy: 0.9984
     Epoch 29/30
-    559/559 - 178s - loss: 0.0224 - accuracy: 0.9946 - val_loss: 0.3062 - val_accuracy: 0.9187
+    352/352 - 89s - loss: 0.0014 - accuracy: 0.9996 - val_loss: 0.0028 - val_accuracy: 0.9988
     Epoch 30/30
-    559/559 - 172s - loss: 0.0171 - accuracy: 0.9950 - val_loss: 0.3157 - val_accuracy: 0.9133
+    352/352 - 81s - loss: 4.1090e-04 - accuracy: 0.9999 - val_loss: 3.7465e-04 - val_accuracy: 1.0000
     
 
 
 
 
-    <tensorflow.python.keras.callbacks.History at 0x1ecfea2e820>
+    <tensorflow.python.keras.callbacks.History at 0x1d39ab9fbe0>
 
 
 
@@ -646,15 +685,20 @@ plot_confusion_matrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix')
 ```
 
     Confusion matrix, without normalization
-    [[23  2  0  0  0]
-     [ 0 25  0  0  0]
-     [ 0  0 20  0  5]
-     [ 0  2  0 23  0]
-     [ 0  0  0  0 25]]
+    [[150   0   0   0   0]
+     [  0 150   0   0   0]
+     [  0   0 150   0   0]
+     [  0   0   0 150   0]
+     [  0   0   0   0 150]]
     
 
 
     
-![png](output_20_1.png)
+![png](output_24_1.png)
     
 
+
+
+```python
+model.save('models/myFlower_model.h5')
+```
