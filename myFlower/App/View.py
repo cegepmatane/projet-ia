@@ -14,6 +14,28 @@ class View(object):
         self.classification = None
         self.classifications = None
 
+
+    def get_structure(self, change_view):
+        root = Tk.Tk()
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_rowconfigure(1, weight=9)
+        root.grid_columnconfigure(0, weight=3)
+
+        fr_header = Tk.Frame(root, relief=Tk.FLAT, bd=1, background="orange")
+        fr_header.grid(row=0, column=0, sticky="nswe")
+        fr_header.grid_rowconfigure(0, weight=1)
+        fr_header.grid_columnconfigure(0, weight=1)
+        fr_header.grid_columnconfigure(1, weight=1)
+
+        bt_home = Tk.Button(fr_header, text="Accueil", command=lambda: change_view("Accueil")
+                                 , bg="#5B5B5B", fg="#f87e28")
+        bt_home.grid(row=0, column=0, sticky="nswe")
+
+        bt_collection = Tk.Button(fr_header, text="Collection", command=lambda: change_view("Collection")
+                                       , bg="#5B5B5B", fg="#f87e28")
+        bt_collection.grid(row=0, column=1, sticky="nswe")
+        return root
+
     def get_home(self, root):
         print("Home View Requested")
 
@@ -77,7 +99,6 @@ class View(object):
         cv_image.pack()
 
         # Ajout de l'image
-        #self.image = Tk.PhotoImage(file='./image/fleur.png')
         cv_image.create_image(0, 0, image=self.classification.get_image(), anchor="nw")
 
         # Ajout du texte indiquant le type de fleur
