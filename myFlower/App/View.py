@@ -73,8 +73,8 @@ class View(object):
             lb_nom_fleur.grid(row=0, column=1, padx=5, pady=5)
             # Image
             print("Valeur de classification.get_id() ->", classification.get_id())
-            bt_image = Tk.Button(fr_fleur, image=classification.get_image(),
-                                 command=lambda: change_view("Details", id_classification=classification.get_id()))
+            bt_image = Tk.Button(fr_fleur, image=classification.get_miniature(),
+                                 command=lambda c=classification.get_id(): change_view("Details", id_classification=c))
             bt_image.grid(row=0, rowspan=2, column=0, padx=5, pady=5)
             # Date
             lb_date_fleur = Tk.Label(fr_fleur, text=classification.get_date(), font=(None, 9))

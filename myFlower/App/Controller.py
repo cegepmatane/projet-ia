@@ -22,10 +22,11 @@ class Controller():
         pourcent_largeur = (largeur_de_base / float(image_fleur.size[0]))
         hauteur = int((float(image_fleur.size[1]) * float(pourcent_largeur)))
         image_fleur = image_fleur.resize((largeur_de_base, hauteur), Image.ANTIALIAS)
-        classification.set_image(image_fleur)
+        classification.set_miniature(image_fleur)
         classification.set_type("Tournesol")
         classification.set_date("" + random.randint(1, 28).__str__() + "/02/2021")
         classification.set_note("Pas de note")
+        classification.set_image(Image.open('./image/fleur.png'))
         self.database.save_classification(classification)
 
         print("Controlleur initialisé")
@@ -94,7 +95,10 @@ class Database(object):
             byte_io = io.BytesIO()
             classification.image.save(byte_io, format="PNG")
             byteArr = byte_io.getvalue()
-            parameters = (classification.type, classification.date, classification.note, byteArr)
+            byte_io2 = io.BytesIO()
+            classification.miniature.save(byte_io2, format="PNG")
+            byteArr2 = byte_io2.getvalue()
+            parameters = (classification.type, classification.date, classification.note, byteArr, byteArr2)
             c.execute(SQL.INSERT_CLASSIFICATION, parameters)
             self.conn.commit()
 
@@ -117,6 +121,7 @@ class Database(object):
             classification.set_date(result[2])
             classification.set_note(result[3])
             classification.set_image(Tk.PhotoImage(data=result[4]))
+            classification.set_miniature(Tk.PhotoImage(data=result[5]))
             classifications.append(classification)
 
         return classifications
@@ -138,6 +143,7 @@ class Database(object):
             classification.set_date(result[2])
             classification.set_note(result[3])
             classification.set_image(Tk.PhotoImage(data=result[4]))
+            classification.set_miniature(Tk.PhotoImage(data=result[5]))
 
             return classification
 
@@ -148,11 +154,12 @@ class SQL():
                                         type text NOT NULL,
                                         date text,
                                         note text,
-                                        image BLOB
+                                        image BLOB,
+                                        miniature BLOB
                                     );"""
 
-    INSERT_CLASSIFICATION = """INSERT INTO classifications(type, date, note, image) 
-                                VALUES(?, ?, ?, ?)"""
+    INSERT_CLASSIFICATION = """INSERT INTO classifications(type, date, note, image, miniature) 
+                                VALUES(?, ?, ?, ?, ?)"""
 
     SELECT_CLASSIFICATIONS = """SELECT * FROM classifications"""
 

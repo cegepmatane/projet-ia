@@ -15,12 +15,16 @@ class Classification(object):
         self.date = "Analyse faite le : 24/01/2021"
         self.note = "Ceci est une note"
         self.image = Tk.PhotoImage(file='./image/fleur.png')
+        self.miniature = Tk.PhotoImage(file='./image/fleur.png')
 
     def get_id(self):
         return self.id
 
     def get_image(self):
         return self.image
+
+    def get_miniature(self):
+        return self.miniature
 
     def get_note(self):
         return self.note
@@ -36,6 +40,9 @@ class Classification(object):
 
     def set_image(self, image):
         self.image = image
+
+    def set_miniature(self, miniature):
+        self.miniature = miniature
 
     def set_note(self, note):
         self.note = note
