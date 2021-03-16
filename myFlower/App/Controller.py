@@ -2,9 +2,17 @@ import tkinter as Tk
 import View
 import Model
 from PIL import Image
-import random
 import sqlite3
 import io
+from datetime import date
+
+# Imports classification
+import os
+import tensorflow as tf
+import numpy as np
+from skimage import transform
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 class Controller():
@@ -161,18 +169,38 @@ class Classificateur():
         self.model = None
 
     def classifier(self, image, change_view, save_classification):
-        typedefleurs = ["Tulipe", "Dandelion", "Rose"]
+        # Désactiver l'utilisation de GPU
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+        # Charger le modèle préalablement entrainé
+        model = load_model('myFlower_model.h5')
+
+        # Charger et formater l'image à classifier
+        train_datagen = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input)
+        img = Image.open('fleur.jpg')
+        img = np.array(img).astype('float32') / 255
+        img = transform.resize(img, (224, 224, 3))
+        img = np.expand_dims(img, axis=0)
+
+        # Effectuer la prédiction
+        pred_prob = model.predict(img)[0]
+        pred_class = list(pred_prob).index(max(pred_prob))
+
+        classes = ['Daisy', 'Dandelion', 'Roses', 'Sunflowers', 'Tulipe']
+
         classification = Model.Classification()
-        #classification.set_type(self.model.predict(image)[0])
-        classification.set_type(typedefleurs[random.randint(0,2)])
+        # classification.set_type(self.model.predict(image)[0])
+
+        classification.set_type(classes[pred_class])
         classification.set_image(image)
-        classification.set_note("Pas de note")
-        classification.set_date("15/03/2021")
+        classification.set_note("Ajouter une note")
+        classification.set_date(date.today())
+
         image_fleur = image
         largeur_de_base = 100
         pourcent_largeur = (largeur_de_base / float(image_fleur.size[0]))
         hauteur = int((float(image_fleur.size[1]) * float(pourcent_largeur)))
         image_fleur = image_fleur.resize((largeur_de_base, hauteur), Image.ANTIALIAS)
         classification.set_miniature(image_fleur)
-        id = save_classification(classification)
-        change_view("Details", id_classification=id)
+
+        change_view("Details", id_classification=save_classification(classification))
