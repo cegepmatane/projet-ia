@@ -13,22 +13,8 @@ class Controller():
         self.view = View.View()
         self.database = Database()
         self.root = self.view.get_structure(self.change_view)
-
-        self.fr_main = self.view.get_home(self.root)
-
-        classification = Model.Classification()
-        image_fleur = Image.open('./image/fleur.png')
-        largeur_de_base = 100
-        pourcent_largeur = (largeur_de_base / float(image_fleur.size[0]))
-        hauteur = int((float(image_fleur.size[1]) * float(pourcent_largeur)))
-        image_fleur = image_fleur.resize((largeur_de_base, hauteur), Image.ANTIALIAS)
-        classification.set_miniature(image_fleur)
-        classification.set_type("Tournesol")
-        classification.set_date("" + random.randint(1, 28).__str__() + "/02/2021")
-        classification.set_note("Pas de note")
-        classification.set_image(Image.open('./image/fleur.png'))
-        self.database.save_classification(classification)
-
+        self.classificateur = Classificateur()
+        self.fr_main = self.view.get_home(self.root, self.classificateur.classifier, self.change_view, self.database.save_classification)
         print("Controlleur initialisé")
 
     def run(self):
@@ -40,7 +26,7 @@ class Controller():
         print("Changing view")
         print(id_classification)
         if "Accueil" == view:
-            self.fr_main = self.view.get_home(self.root)
+            self.fr_main = self.view.get_home(self.root, self.classificateur.classifier, self.change_view, self.database.save_classification)
             print("Accueil")
         elif "Collection" == view:
             self.fr_main = self.view.get_collection(self.root, self.change_view, self.database.get_collection())
@@ -49,7 +35,7 @@ class Controller():
             self.fr_main = self.view.get_details(self.root, self.database.get_details(id_classification))
             print("Details")
         else:
-            print("Error")
+            print("Error lors du change view : " + view.__str__())
 
 
 class Database(object):
@@ -101,6 +87,7 @@ class Database(object):
             parameters = (classification.type, classification.date, classification.note, byteArr, byteArr2)
             c.execute(SQL.INSERT_CLASSIFICATION, parameters)
             self.conn.commit()
+            return self.conn.cursor().execute(SQL.SELECT_LAST_INSERTED_ID).fetchall()[0][0]
 
         except sqlite3.Error as e:
             print(e)
@@ -164,3 +151,28 @@ class SQL():
     SELECT_CLASSIFICATIONS = """SELECT * FROM classifications"""
 
     SELECT_CLASSIFICATION = """SELECT * FROM classifications WHERE id=?"""
+
+    SELECT_LAST_INSERTED_ID = """SELECT last_insert_rowid()"""
+
+
+class Classificateur():
+
+    def __init__(self):
+        self.model = None
+
+    def classifier(self, image, change_view, save_classification):
+        typedefleurs = ["Tulipe", "Dandelion", "Rose"]
+        classification = Model.Classification()
+        #classification.set_type(self.model.predict(image)[0])
+        classification.set_type(typedefleurs[random.randint(0,2)])
+        classification.set_image(image)
+        classification.set_note("Pas de note")
+        classification.set_date("15/03/2021")
+        image_fleur = image
+        largeur_de_base = 100
+        pourcent_largeur = (largeur_de_base / float(image_fleur.size[0]))
+        hauteur = int((float(image_fleur.size[1]) * float(pourcent_largeur)))
+        image_fleur = image_fleur.resize((largeur_de_base, hauteur), Image.ANTIALIAS)
+        classification.set_miniature(image_fleur)
+        id = save_classification(classification)
+        change_view("Details", id_classification=id)

@@ -1,4 +1,6 @@
 import tkinter as Tk
+from PIL import Image
+import random
 
 from tkscrolledframe import ScrolledFrame
 
@@ -13,7 +15,6 @@ class View(object):
         self.image = None
         self.classification = None
         self.classifications = None
-
 
     def get_structure(self, change_view):
         root = Tk.Tk()
@@ -36,14 +37,19 @@ class View(object):
         bt_collection.grid(row=0, column=1, sticky="nswe")
         return root
 
-    def get_home(self, root):
+    def get_home(self, root, classifier, change_view, save_classification):
         print("Home View Requested")
 
         if "Home" == self.actual_view:
             return self.frame
 
         self.frame = Tk.Frame(root, relief=Tk.FLAT, bd=1, background="green")
+
+        bt_ajouter_image = Tk.Button(self.frame, text="Classifier",
+                                     command=lambda: classifier(Image.open('./image/fleur'+random.randint(1,3).__str__()+'.png'),change_view, save_classification ))
+        bt_ajouter_image.grid(row=0, column=1, sticky="nswe")
         self.frame.grid(row=1, column=0, sticky="nswe")
+
         return self.frame
 
     def get_collection(self, root, change_view, classifications):

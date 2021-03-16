@@ -14,8 +14,8 @@ class Classification(object):
         self.type = "Type de fleur : Rose"
         self.date = "Analyse faite le : 24/01/2021"
         self.note = "Ceci est une note"
-        self.image = Tk.PhotoImage(file='./image/fleur.png')
-        self.miniature = Tk.PhotoImage(file='./image/fleur.png')
+        self.image = None
+        self.miniature = None
 
     def get_id(self):
         return self.id
