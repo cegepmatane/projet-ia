@@ -6,11 +6,11 @@ from tkscrolledframe import ScrolledFrame
 class View(object):
 
     def __init__(self):
-        self.actual_view = "None"
         self.frame = None
         self.image = None
         self.classification = None
         self.classifications = None
+        self.label = None
         print("Vue initialisée")
 
 
@@ -35,25 +35,23 @@ class View(object):
         bt_collection.grid(row=0, column=1, sticky="nswe")
         return root
 
-    def get_home(self, root, askopenfile):
+    def get_home(self, root, askopenfile, faire_classification_webcam):
         print("Home View Requested")
 
-        if "Home" == self.actual_view:
-            return self.frame
-
         self.frame = Tk.Frame(root, relief=Tk.FLAT, bd=1, background="green")
+        self.label = Tk.Label(self.frame)
+        self.label.grid()
+        bt_importer_image = Tk.Button(self.frame, text="Importer une image", command=askopenfile)
+        bt_importer_image.grid(row=2, column=0, sticky="nswe")
 
-        bt_ajouter_image = Tk.Button(self.frame, text="Classifier", command=askopenfile)
-
-        bt_ajouter_image.grid(row=0, column=1, sticky="nswe")
+        bt_classification_webcam = Tk.Button(self.frame, text="Classifier le flux vidéo", command=faire_classification_webcam)
+        bt_classification_webcam.grid(row=3, column=0, sticky="nswe")
         self.frame.grid(row=1, column=0, sticky="nswe")
 
-        return self.frame
+        return self.frame, self.label
 
     def get_collection(self, root, change_view, classifications):
         print("Collection View Requested")
-        if "Collection" == self.actual_view:
-            return self.frame
 
         sf_page = ScrolledFrame(root)
         sf_page.grid(row=1, column=0, sticky="nswe")
@@ -76,7 +74,6 @@ class View(object):
             lb_nom_fleur = Tk.Label(fr_fleur, text=classification.get_type(), font=(None, 15))
             lb_nom_fleur.grid(row=0, column=1, padx=5, pady=5)
             # Image
-            print("Valeur de classification.get_id() ->", classification.get_id())
             bt_image = Tk.Button(fr_fleur, image=classification.get_miniature(),
                                  command=lambda c=classification.get_id(): change_view("Details", id_classification=c))
             bt_image.grid(row=0, rowspan=2, column=0, padx=5, pady=5)
@@ -90,8 +87,6 @@ class View(object):
 
     def get_details(self, root, classification, supprimer_classification, modifier_note):
         print("Details View Requested")
-        if "Details" == self.actual_view:
-            return self.frame
 
         self.classification = classification
 

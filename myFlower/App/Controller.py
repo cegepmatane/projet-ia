@@ -1,7 +1,10 @@
 import tkinter as Tk
+from threading import Thread, Lock
+import cv2
+
 import View
 import Model
-from PIL import Image
+from PIL import Image, ImageTk
 import sqlite3
 import io
 from datetime import date
@@ -23,7 +26,15 @@ class Controller():
         self.database = Database()
         self.root = self.view.get_structure(self.change_view)
         self.classificateur = Classificateur()
+        self.actual_view = ""
+        self.label = None
         self.change_view(view="Accueil")
+        self.stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        (self.grabbed, self.frame) = self.stream.read()
+        self.thread = Thread(target=self.afficher_flux, args=())
+        self.thread.start()
         print("Controlleur initialisé")
 
     def run(self):
@@ -33,13 +44,16 @@ class Controller():
 
     def change_view(self, view="", id_classification=0):
         print("Changing view")
-        if "Accueil" == view:
-            self.fr_main = self.view.get_home(self.root, self.askopenfile)
+        if "Accueil" == view and self.actual_view != view:
+            self.actual_view = view
+            (self.fr_main, self.label) = self.view.get_home(self.root, self.askopenfile, self.faire_classification_webcam)
             print("Accueil")
-        elif "Collection" == view:
+        elif "Collection" == view and self.actual_view != view:
+            self.actual_view = view
             self.fr_main = self.view.get_collection(self.root, self.change_view, self.database.get_collection())
             print("Collection")
-        elif "Details" == view:
+        elif "Details" == view and self.actual_view != view:
+            self.actual_view = view
             self.fr_main = self.view.get_details(self.root, self.database.get_details(id_classification),
                                                  self.supprimer_classification, self.modifier_note)
             print("Details")
@@ -54,6 +68,9 @@ class Controller():
         print(file)
         self.classificateur.classifier(Image.open(file), self.change_view, self.database.save_classification)
 
+    def faire_classification_webcam(self):
+        self.classificateur.classifier(Image.fromarray(cv2.cvtColor(self.frame,cv2.COLOR_BGR2RGB),"RGB"), self.change_view, self.database.save_classification)
+
     def supprimer_classification(self, id):
         self.database.delete_classification(id)
         self.change_view("Collection")
@@ -61,15 +78,23 @@ class Controller():
     def modifier_note(self, id, note):
         self.database.update_classification(id, note)
 
+    def afficher_flux(self):
+        while 1:
+            while self.actual_view == "Accueil":
+                (self.grabbed, self.frame) = self.stream.read()
+                self.image = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(self.frame,cv2.COLOR_BGR2RGB),"RGB"))
+                self.label.configure(image=self.image)
+                if cv2.waitKey(1) == ord('q'):
+                    break
 
 
 class Database(object):
+
     def __init__(self):
         print("Database initialisée")
         self.collection = None
         self.conn = self.create_connection(self, "database/BDD_Classifications.db")
         self.create_table(self, self.conn, SQL.CREATE_TABLE)
-        print(self.conn.cursor().execute("SELECT type, date, note FROM classifications").fetchall())
         self.conn.commit()
 
     @staticmethod
