@@ -5,6 +5,7 @@ from PIL import Image
 import sqlite3
 import io
 from datetime import date
+from tkinter.filedialog import askopenfilename
 
 # Imports classification
 import os
@@ -22,7 +23,7 @@ class Controller():
         self.database = Database()
         self.root = self.view.get_structure(self.change_view)
         self.classificateur = Classificateur()
-        self.fr_main = self.view.get_home(self.root, self.classificateur.classifier, self.change_view, self.database.save_classification)
+        self.change_view(view="Accueil")
         print("Controlleur initialisé")
 
     def run(self):
@@ -30,20 +31,36 @@ class Controller():
         self.root.deiconify()
         self.root.mainloop()
 
-    def change_view(self, view=False, id_classification=0):
+    def change_view(self, view="", id_classification=0):
         print("Changing view")
-        print(id_classification)
         if "Accueil" == view:
-            self.fr_main = self.view.get_home(self.root, self.classificateur.classifier, self.change_view, self.database.save_classification)
+            self.fr_main = self.view.get_home(self.root, self.askopenfile)
             print("Accueil")
         elif "Collection" == view:
             self.fr_main = self.view.get_collection(self.root, self.change_view, self.database.get_collection())
             print("Collection")
         elif "Details" == view:
-            self.fr_main = self.view.get_details(self.root, self.database.get_details(id_classification))
+            self.fr_main = self.view.get_details(self.root, self.database.get_details(id_classification),
+                                                 self.supprimer_classification, self.modifier_note)
             print("Details")
         else:
             print("Error lors du change view : " + view.__str__())
+
+    def askopenfile(self):
+        file = askopenfilename(title="Selectionner une image", filetypes=[('Photo à classifier', '*.png')])
+        if not file:
+            return
+
+        print(file)
+        self.classificateur.classifier(Image.open(file), self.change_view, self.database.save_classification)
+
+    def supprimer_classification(self, id):
+        self.database.delete_classification(id)
+        self.change_view("Collection")
+
+    def modifier_note(self, id, note):
+        self.database.update_classification(id, note)
+
 
 
 class Database(object):
@@ -142,6 +159,23 @@ class Database(object):
 
             return classification
 
+    def delete_classification(self, id_classification):
+        cur = self.conn.cursor()
+        parameters = (id_classification,)
+        cur.execute(SQL.DELETE_CLASSIFICATION_WITH_ID, parameters)
+        self.conn.commit()
+
+    def update_classification(self, id_classification, note):
+        try:
+            c = self.conn.cursor()
+            parameters = (note, id_classification)
+            c.execute(SQL.UPDATE_NOTE_WITH_ID, parameters)
+            print("Update_classification")
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(e)
+
+
 
 class SQL():
     CREATE_TABLE = """CREATE TABLE IF NOT EXISTS classifications (
@@ -162,36 +196,36 @@ class SQL():
 
     SELECT_LAST_INSERTED_ID = """SELECT last_insert_rowid()"""
 
+    DELETE_CLASSIFICATION_WITH_ID = """DELETE FROM classifications WHERE id=?"""
+
+    UPDATE_NOTE_WITH_ID = """UPDATE classifications SET note=? WHERE id=?"""
+
 
 class Classificateur():
 
     def __init__(self):
-        self.model = None
-
-    def classifier(self, image, change_view, save_classification):
         # Désactiver l'utilisation de GPU
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        self.model = load_model('myFlower_model.h5')
+        ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input)
+        self.classes = ['Daisy', 'Dandelion', 'Roses', 'Sunflowers', 'Tulipe']
 
-        # Charger le modèle préalablement entrainé
-        model = load_model('myFlower_model.h5')
+    def classifier(self, image, change_view, save_classification):
 
         # Charger et formater l'image à classifier
-        train_datagen = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input)
-        img = Image.open('fleur.jpg')
+        img = image
         img = np.array(img).astype('float32') / 255
         img = transform.resize(img, (224, 224, 3))
         img = np.expand_dims(img, axis=0)
 
         # Effectuer la prédiction
-        pred_prob = model.predict(img)[0]
+        pred_prob = self.model.predict(img)[0]
         pred_class = list(pred_prob).index(max(pred_prob))
 
-        classes = ['Daisy', 'Dandelion', 'Roses', 'Sunflowers', 'Tulipe']
 
         classification = Model.Classification()
-        # classification.set_type(self.model.predict(image)[0])
 
-        classification.set_type(classes[pred_class])
+        classification.set_type(self.classes[pred_class])
         classification.set_image(image)
         classification.set_note("Ajouter une note")
         classification.set_date(date.today())
