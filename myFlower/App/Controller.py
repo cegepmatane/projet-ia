@@ -106,7 +106,7 @@ class Database(object):
     def __init__(self):
         print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Initialisation de Database()")
         self.collection = None
-        self.conn = self.create_connection(self, "database/BDD_Classifications.db")
+        self.conn = self.create_connection(self, "BDD_Classifications.db")
         self.create_table(self, self.conn, SQL.CREATE_TABLE)
         self.conn.commit()
         print("     ",datetime.now().strftime("%Hh%Mm%Ss"), ": Database() initialisée.")
