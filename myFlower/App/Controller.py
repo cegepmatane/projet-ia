@@ -250,7 +250,12 @@ class Classificateur():
 
         classification = Model.Classification()
 
-        classification.set_type(self.classes[pred_class])
+        print(max(pred_prob))
+        if max(pred_prob) > 0.75:
+            classification.set_type(self.classes[pred_class])
+        else:
+            classification.set_type(self.classes[pred_class] + " (incertain)")
+
         classification.set_image(image)
         classification.set_note("Ajouter une note")
         classification.set_date(date.today())
