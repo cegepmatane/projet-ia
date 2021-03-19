@@ -1,5 +1,5 @@
 import tkinter as Tk
-from threading import Thread, Lock
+from threading import Thread
 import cv2
 
 import View
@@ -7,7 +7,7 @@ import Model
 from PIL import Image, ImageTk
 import sqlite3
 import io
-from datetime import date
+from datetime import date, datetime
 from tkinter.filedialog import askopenfilename
 
 # Imports classification
@@ -22,43 +22,55 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 class Controller():
     def __init__(self):
 
+        print(datetime.now().strftime("%Hh%Mm%Ss"),": Initialisation de Controlleur()")
         self.view = View.View()
         self.database = Database()
-        self.root = self.view.get_structure(self.change_view)
         self.classificateur = Classificateur()
-        self.actual_view = ""
+
         self.label = None
+
+        self.root = self.view.get_structure(self.change_view)
+        self.actual_view = ""
         self.change_view(view="Accueil")
+
         self.stream = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         (self.grabbed, self.frame) = self.stream.read()
         self.thread = Thread(target=self.afficher_flux, args=())
         self.thread.start()
-        print("Controlleur initialisé")
+
+        print(datetime.now().strftime("%Hh%Mm%Ss"), ": Controlleur() initialisé.")
 
     def run(self):
-        self.root.title("Classification de fleurs")
+        self.root.title("MyFlower")
         self.root.deiconify()
         self.root.mainloop()
 
     def change_view(self, view="", id_classification=0):
-        print("Changing view")
+        print("\nChangement de vue :")
         if "Accueil" == view and self.actual_view != view:
+            print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Vue accueil demandée...")
             self.actual_view = view
-            (self.fr_main, self.label) = self.view.get_home(self.root, self.askopenfile, self.faire_classification_webcam)
-            print("Accueil")
+            (self.fr_main, self.label) = self.view.get_home(self.root, self.askopenfile,
+                                                            self.faire_classification_webcam)
+            print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Vue accueil reçue.")
+
         elif "Collection" == view and self.actual_view != view:
+            print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Vue collection demandée...")
             self.actual_view = view
             self.fr_main = self.view.get_collection(self.root, self.change_view, self.database.get_collection())
-            print("Collection")
+            print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Vue collection reçue.")
+
         elif "Details" == view and self.actual_view != view:
+            print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Vue détails demandée...")
             self.actual_view = view
             self.fr_main = self.view.get_details(self.root, self.database.get_details(id_classification),
                                                  self.supprimer_classification, self.modifier_note)
-            print("Details")
+            print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Vue détails reçue.")
+
         else:
-            print("Error lors du change view : " + view.__str__())
+            print("     La vue demandée est la vue actuelle.")
 
     def askopenfile(self):
         file = askopenfilename(title="Selectionner une image", filetypes=[('Photo à classifier', '*.png')])
@@ -69,7 +81,8 @@ class Controller():
         self.classificateur.classifier(Image.open(file), self.change_view, self.database.save_classification)
 
     def faire_classification_webcam(self):
-        self.classificateur.classifier(Image.fromarray(cv2.cvtColor(self.frame,cv2.COLOR_BGR2RGB),"RGB"), self.change_view, self.database.save_classification)
+        self.classificateur.classifier(Image.fromarray(cv2.cvtColor(self.frame,cv2.COLOR_BGR2RGB),"RGB"),
+                                       self.change_view, self.database.save_classification)
 
     def supprimer_classification(self, id):
         self.database.delete_classification(id)
@@ -91,11 +104,13 @@ class Controller():
 class Database(object):
 
     def __init__(self):
-        print("Database initialisée")
+        print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Initialisation de Database()")
         self.collection = None
         self.conn = self.create_connection(self, "database/BDD_Classifications.db")
         self.create_table(self, self.conn, SQL.CREATE_TABLE)
         self.conn.commit()
+        print("     ",datetime.now().strftime("%Hh%Mm%Ss"), ": Database() initialisée.")
+
 
     @staticmethod
     def create_connection(self, db_file):
@@ -172,7 +187,6 @@ class Database(object):
 
         results = cur.execute(SQL.SELECT_CLASSIFICATION, parameters).fetchall()
 
-        print(id_classification)
         for result in results:
             classification = Model.Classification()
             classification.set_id(result[0])
@@ -229,11 +243,14 @@ class SQL():
 class Classificateur():
 
     def __init__(self):
+        print("     ",datetime.now().strftime("%Hh%Mm%Ss"),": Initialisation de Classificateur()")
         # Désactiver l'utilisation de GPU
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         self.model = load_model('myFlower_model.h5')
         ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input)
         self.classes = ['Daisy', 'Dandelion', 'Roses', 'Sunflowers', 'Tulipe']
+        print("     ",datetime.now().strftime("%Hh%Mm%Ss"), ": Classificateur() initialisé.")
+
 
     def classifier(self, image, change_view, save_classification):
 
@@ -246,7 +263,6 @@ class Classificateur():
         # Effectuer la prédiction
         pred_prob = self.model.predict(img)[0]
         pred_class = list(pred_prob).index(max(pred_prob))
-
 
         classification = Model.Classification()
 
